@@ -41,6 +41,12 @@ app.post('/api/square' , function(req, res) {
         'form': formData,
         'headers': req.headers
     };    
+    if (config.subscriptionKey){
+        options.headers = {
+            'Content-Type': 'application/json',
+            'Ocp-Apim-Subscription-Key': config.subscriptionKey
+        };
+    }
     request.post(options, function(innererr, innerres, body) {
         var endDate = new Date();
         var duration = endDate - startDate;
