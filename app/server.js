@@ -37,16 +37,18 @@ app.post('/api/square' , function(req, res) {
         number: req.headers.number
     };
     var options = { 
-        'url': config.endpoint + '/api/square/' + req.headers.number,
+        'url': config.endpoint + '/square/' + req.headers.number,
         'form': formData,
         'headers': req.headers
     };    
     if (config.subscriptionKey){
         options.headers = {
-            'Content-Type': 'application/json',
-            'Ocp-Apim-Subscription-Key': config.subscriptionKey
+            'Ocp-Apim-Subscription-Key': config.subscriptionKey,
+            'Cache-Control': 'no-cache'
         };
     }
+    console.log("posting");
+    console.log(options);
     request.post(options, function(innererr, innerres, body) {
         var endDate = new Date();
         var duration = endDate - startDate;

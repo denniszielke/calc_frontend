@@ -1,5 +1,10 @@
 ﻿var apiUrl = '/api/';
 
+function loopClick() {
+    console.log(document.getElementById('triggerButton'));
+    document.getElementById('triggerButton').click();
+};
+
 angular.module('CalculatorApp', [])
     .controller('CalculatorController',
         function ($scope, $http) {
@@ -13,7 +18,21 @@ angular.module('CalculatorApp', [])
                 };
 
                 $http.post(postUrl, { 'number': $scope.id }, config)
-                    .success(function (response) { $scope.result = response});
+                    .success(function (response) { 
+                        $scope.result = response;
+                        console.log(response);
+                        if ($scope.loop){
+                            if (!$scope.frequency){
+                                $scope.frequency = 500;
+                            }
+                            $scope.looping = false;
+                            if (!$scope.looping)
+                            {
+                                window.setTimeout(loopClick, $scope.frequency);
+                            }
+                            $scope.looping = true;
+                        }
+                    });
             }            
         }
     );
