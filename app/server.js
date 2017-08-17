@@ -26,50 +26,74 @@ app.get('/ping', function(req, res) {
 });
 
 app.post('/api/square' , function(req, res) {
+
     console.log("received client request:");
     console.log(req.headers);
     if (config.instrumentationKey){ 
         var startDate = new Date();
         insightsClient.trackEvent("square-client-call", { value: req.headers.number });
     }
-    var formData = {
-        received: new Date().toLocaleString(), 
-        number: req.headers.number
-    };
-    var options = { 
-        'url': config.endpoint + '/square/' + req.headers.number,
-        'form': formData,
-        'headers': req.headers
-    };    
-    if (config.subscriptionKey){
-        options.headers = {
-            'Ocp-Apim-Subscription-Key': config.subscriptionKey,
-            'Cache-Control': 'no-cache'
-        };
-    }
-    console.log("posting");
-    console.log(options);
-    request.post(options, function(innererr, innerres, body) {
-        var endDate = new Date();
-        var duration = endDate - startDate;
-        if (innererr){
-            console.log("error:");
-            console.log(innererr);
-            if (config.instrumentationKey){ 
-                insightsClient.trackException(innererr);
-            }
+
+    console.log("requesting bearer token");
+    var authOptions = { 
+        'url': 'https://login.microsoftonline.com/' + config.tenant + '/oauth2/token',
+        'form': 'client_id=' + config.clientId + '&resource='+  config.resource +'&client_secret=' + config.clientSecret + '&grant_type=client_credentials',
+        'headers': {
+            'Content-Type': 'application/x-www-form-urlencoded'
         }
-        console.log("received response:");
-        console.log(body);
-        var jresponse = JSON.parse(body);
-        console.log(jresponse.value);
-        if (config.instrumentationKey){ 
-            insightsClient.trackEvent("calculation-client-call-received", { value: jresponse.value });
-            insightsClient.trackMetric("calculation-client-call-duration", duration);
-        }        
-        res.send(body);
+    };    
+    console.log(authOptions);
+    console.log("posting oauth2 token endpoint");
+    request.post(authOptions, function(autherr, authres, authbody) {
+        console.log("received auth error:");
+        console.log(autherr);
+        // console.log("received auth res");
+        // console.log(authres);
+        console.log("received auth body:");
+        var authToken = JSON.parse(authbody);
+        console.log(authToken.expires_in);
+        console.log(authToken.access_token);
+
+        var formData = {
+            received: new Date().toLocaleString(), 
+            number: req.headers.number
+        };
+        var options = { 
+            'url': config.endpoint + '/square/' + req.headers.number,
+            'form': formData,
+            'headers': req.headers
+        };    
+        if (config.subscriptionKey){
+            options.headers = {
+                'Ocp-Apim-Subscription-Key': config.subscriptionKey,
+                'Cache-Control': 'no-cache',
+                'Authorization': 'Bearer ' + authToken.access_token
+            };
+        }
+        console.log("posting");
+        console.log(options);
+        request.post(options, function(innererr, innerres, body) {
+            var endDate = new Date();
+            var duration = endDate - startDate;
+            if (innererr){
+                console.log("error:");
+                console.log(innererr);
+                if (config.instrumentationKey){ 
+                    insightsClient.trackException(innererr);
+                }
+            }
+            console.log("received response:");
+            console.log(body);
+            var jresponse = JSON.parse(body);
+            console.log(jresponse.value);
+            if (config.instrumentationKey){ 
+                insightsClient.trackEvent("calculation-client-call-received", { value: jresponse.value });
+                insightsClient.trackMetric("calculation-client-call-duration", duration);
+            }        
+            res.send(body);
+        });
     });
-    
+       
 });
 
 app.post('/api/dummy', function(req, res) {
