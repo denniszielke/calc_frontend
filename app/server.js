@@ -29,8 +29,9 @@ app.post('/api/square' , function(req, res) {
 
     console.log("received client request:");
     console.log(req.headers);
-    if (config.instrumentationKey){ 
-        var startDate = new Date();
+    var startDate = new Date();
+    var authstartDate = new Date();
+    if (config.instrumentationKey){         
         insightsClient.trackEvent("square-client-call", { value: req.headers.number });
     }
 
@@ -45,6 +46,11 @@ app.post('/api/square' , function(req, res) {
     console.log(authOptions);
     console.log("posting oauth2 token endpoint");
     request.post(authOptions, function(autherr, authres, authbody) {
+        var authendDate = new Date();
+        var authduration = authendDate - startDate;
+        if (config.instrumentationKey){ 
+            insightsClient.trackMetric("calculation-auth-token-duration", authduration);
+        } 
         console.log("received auth error:");
         console.log(autherr);
         // console.log("received auth res");
@@ -72,9 +78,12 @@ app.post('/api/square' , function(req, res) {
         }
         console.log("posting");
         console.log(options);
+        var apistartDate = new Date();
         request.post(options, function(innererr, innerres, body) {
             var endDate = new Date();
             var duration = endDate - startDate;
+            var apiendDate = new Date();
+            var apiduration = apiendDate - apistartDate;
             if (innererr){
                 console.log("error:");
                 console.log(innererr);
@@ -89,6 +98,7 @@ app.post('/api/square' , function(req, res) {
             if (config.instrumentationKey){ 
                 insightsClient.trackEvent("calculation-client-call-received", { value: jresponse.value });
                 insightsClient.trackMetric("calculation-client-call-duration", duration);
+                insightsClient.trackMetric("calculation-api-call-duration", apiduration);
             }        
             res.send(body);
         });
