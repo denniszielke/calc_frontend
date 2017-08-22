@@ -13,11 +13,12 @@ angular.module('CalculatorApp', [])
                 var config = {
                     headers: {
                         'Content-Type': 'application/x-www-form-urlencoded;charset=utf-8;',
-                        'number':  $scope.id
+                        'number': $scope.id,
+                        'key': $scope.key
                     }
                 };
 
-                $http.post(postUrl, { 'number': $scope.id }, config)
+                $http.post(postUrl, { 'number': $scope.id, 'key': $scope.key }, config)
                     .success(function (response) { 
                         $scope.result = response;
                         console.log(response);

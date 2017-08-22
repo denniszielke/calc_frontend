@@ -69,12 +69,20 @@ app.post('/api/square' , function(req, res) {
             'form': formData,
             'headers': req.headers
         };    
-        if (config.subscriptionKey){
+        if (config.subscriptionKey || req.headers.key){
             options.headers = {
                 'Ocp-Apim-Subscription-Key': config.subscriptionKey,
                 'Cache-Control': 'no-cache',
                 'Authorization': 'Bearer ' + authToken.access_token
             };
+            if (req.headers.key){
+                console.log("using client subscription key");
+                options.headers = {
+                    'Ocp-Apim-Subscription-Key': req.headers.key,
+                    'Cache-Control': 'no-cache',
+                    'Authorization': 'Bearer ' + authToken.access_token
+                };
+            }
         }
         console.log("posting");
         console.log(options);
